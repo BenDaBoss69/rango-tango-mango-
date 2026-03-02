@@ -1,9 +1,10 @@
 from urllib import request
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from rango.models import Category
 from rango.models import Page
+from rango.forms import CategoryForm, PageForm
 
 
 def index(request):
@@ -21,6 +22,33 @@ def index(request):
 
 def about(request):
     return render(request, 'rango/about.html')
+
+
+def add_category(request):
+    form = CategoryForm()
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save(commit=True)
+            return redirect('rango:index')
+    return render(request, 'rango/add_category.html', {'form': form})
+
+
+def add_page(request, category_name_slug):
+    try:
+        category = Category.objects.get(slug=category_name_slug)
+    except Category.DoesNotExist:
+        return redirect('rango:index')
+
+    form = PageForm()
+    if request.method == 'POST':
+        form = PageForm(request.POST)
+        if form.is_valid():
+            page = form.save(commit=False)
+            page.category = category
+            page.save()
+            return redirect('rango:show_category', category_name_slug=category_name_slug)
+    return render(request, 'rango/add_page.html', {'form': form, 'category': category})
 
 
 def show_category(request, category_name_slug):
