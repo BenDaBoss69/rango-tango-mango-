@@ -1,4 +1,5 @@
 from urllib import request
+from datetime import datetime
 
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
@@ -15,6 +16,32 @@ def index(request):
     # grab the top five categories by likes and the top five pages by views
     category_list = Category.objects.order_by('-likes')[:5]
     page_list = Page.objects.order_by('-views')[:5]
+    # Session handling for visit counts (do not pass visits in index context)
+    session = request.session
+    visits = session.get('visits', 0)
+    last_visit_str = session.get('last_visit')
+
+    now = datetime.now()
+
+    if last_visit_str:
+        try:
+            last_visit_time = datetime.strptime(last_visit_str[:19], '%Y-%m-%d %H:%M:%S')
+        except Exception:
+            last_visit_time = now
+
+        # if last visit was more than a day ago, increment
+        if (now - last_visit_time).days >= 1:
+            visits = visits + 1
+            session['last_visit'] = str(now)
+            session['visits'] = visits
+        else:
+            # update last_visit but don't increment
+            session['last_visit'] = str(last_visit_time)
+            session['visits'] = visits
+    else:
+        visits = 1
+        session['last_visit'] = str(now)
+        session['visits'] = visits
 
     context_dict = {
         'boldmessage': 'Crunchy, creamy, cookie, candy, cupcake!',
@@ -25,7 +52,11 @@ def index(request):
     return render(request, 'rango/index.html', context=context_dict)
 
 def about(request):
-    return render(request, 'rango/about.html')
+    # ensure session counter has been initialised by index view
+    session = request.session
+    visits = session.get('visits', 0)
+    context = {'visits': visits}
+    return render(request, 'rango/about.html', context=context)
 
 
 def add_category(request):
