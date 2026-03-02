@@ -6,12 +6,14 @@
 {% block content %}
     <h1>Rango says...</h1>
     <div>
-        hey there partner! <br />
+        {% if user.is_authenticated %}
+            howdy {{ user.username }}!
+        {% else %}
+            hey there partner! <br />
+        {% endif %}
         <strong>{{ boldmessage }}</strong><br />
     </div>
-    <div>
-        <a href="/rango/add_category/">Add a New Category</a><br />
-    </div>
+    {# navigation for add category is handled in base.html and shown only when logged in #}
     
     <div>
     <h2>Most Liked Categories</h2>
